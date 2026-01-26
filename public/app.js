@@ -1580,10 +1580,10 @@ function renderProjectsModalList() {
     .sort((a, b) => b.count - a.count);
 
   container.innerHTML = list.map(project => `
-    <div class="projects-modal-item" onclick="selectProjectFromModal('${escapeHtml(project.path)}')">
-      <span class="project-icon">&#x1F4C1;</span>
-      <span class="project-name">${escapeHtml(project.name)}</span>
-      <span class="projects-modal-count">${project.count}</span>
+    <div class="projects-modal-item flex items-center gap-3 rounded-xl border border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" onclick="selectProjectFromModal('${escapeHtml(project.path)}')">
+      <span class="project-icon text-base">&#x1F4C1;</span>
+      <span class="project-name flex-1">${escapeHtml(project.name)}</span>
+      <span class="projects-modal-count rounded-full border border-border bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground">${project.count}</span>
     </div>
   `).join('');
 }

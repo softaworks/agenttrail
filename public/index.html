@@ -80,15 +80,15 @@
         <div class="filter-buttons flex items-center gap-1 rounded-full border border-border bg-card/70 p-1 text-sm" id="time-filters">
           <button class="filter-btn active rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="all">
             All
-            <span class="filter-count" id="count-all">0</span>
+            <span class="filter-count ml-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground" id="count-all">0</span>
           </button>
           <button class="filter-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="today">
             Today
-            <span class="filter-count" id="count-today">0</span>
+            <span class="filter-count ml-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground" id="count-today">0</span>
           </button>
           <button class="filter-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="week">
             Week
-            <span class="filter-count" id="count-week">0</span>
+            <span class="filter-count ml-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground" id="count-week">0</span>
           </button>
         </div>
 
@@ -194,7 +194,7 @@
   </div>
 
   <!-- Settings Modal -->
-  <div class="modal fixed inset-0 z-50 hidden items-center justify-center" id="settings-modal">
+  <div class="modal fixed inset-0 z-50 items-center justify-center" id="settings-modal">
     <div class="modal-backdrop absolute inset-0 bg-black/40 backdrop-blur-sm" id="modal-backdrop"></div>
     <div class="modal-content relative mx-auto w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl">
       <div class="modal-header flex items-center justify-between">
@@ -223,7 +223,7 @@
   </div>
 
   <!-- Projects Modal -->
-  <div class="modal fixed inset-0 z-50 hidden items-center justify-center" id="projects-modal">
+  <div class="modal fixed inset-0 z-50 items-center justify-center" id="projects-modal">
     <div class="modal-backdrop absolute inset-0 bg-black/40 backdrop-blur-sm" id="projects-backdrop"></div>
     <div class="modal-content relative mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-xl">
       <div class="modal-header flex items-center justify-between">
