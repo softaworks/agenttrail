@@ -53,40 +53,40 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
 </head>
 <body>
-  <div class="app">
+  <div class="app min-h-screen bg-background text-foreground">
     <!-- Header -->
-    <header class="header">
-      <div class="header-content">
+    <header class="header sticky top-0 z-50 w-full border-b border-border/80 bg-background/85 backdrop-blur">
+      <div class="header-content mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <!-- Logo -->
-        <div class="logo">
-          <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100" height="100" rx="16" fill="var(--bg-tertiary)"/>
+        <div class="logo flex items-center gap-3 font-display text-lg font-semibold text-foreground sm:text-xl">
+          <svg class="logo-svg h-8 w-8" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="100" rx="16" fill="rgb(var(--bg-tertiary))"/>
             <g transform="translate(50, 50)">
               <!-- Trail path -->
               <path d="M -30 15 Q -15 -5, 0 5 Q 15 15, 30 -5"
-                    fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+                    fill="none" stroke="rgb(var(--primary))" stroke-width="6" stroke-linecap="round"/>
               <!-- Dots on trail -->
-              <circle cx="-30" cy="15" r="6" fill="var(--accent)"/>
+              <circle cx="-30" cy="15" r="6" fill="rgb(var(--primary))"/>
               <circle cx="0" cy="5" r="5" fill="var(--accent-soft)">
                 <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
               </circle>
-              <circle cx="30" cy="-5" r="4" fill="var(--success)"/>
+              <circle cx="30" cy="-5" r="4" fill="rgb(var(--accent))"/>
             </g>
           </svg>
           <span class="logo-text">AgentTrail</span>
         </div>
 
         <!-- Filter Buttons -->
-        <div class="filter-buttons" id="time-filters">
-          <button class="filter-btn active" data-filter="all">
+        <div class="filter-buttons flex items-center gap-1 rounded-full border border-border bg-card/70 p-1 text-sm" id="time-filters">
+          <button class="filter-btn active rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="all">
             All
             <span class="filter-count" id="count-all">0</span>
           </button>
-          <button class="filter-btn" data-filter="today">
+          <button class="filter-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="today">
             Today
             <span class="filter-count" id="count-today">0</span>
           </button>
-          <button class="filter-btn" data-filter="week">
+          <button class="filter-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground" data-filter="week">
             Week
             <span class="filter-count" id="count-week">0</span>
           </button>
@@ -94,19 +94,19 @@
 
         <!-- Search -->
         <div class="search-box">
-          <div class="search-wrapper">
-            <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+          <div class="search-wrapper flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm">
+            <svg class="search-icon text-muted-foreground" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
               <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
             </svg>
-            <input type="text" class="search-input" id="search-input" placeholder="Search sessions...">
-            <button class="search-mode-btn" id="search-mode-btn" title="Toggle deep search">
+            <input type="text" class="search-input w-48 bg-transparent text-foreground outline-none placeholder:text-muted-foreground sm:w-64" id="search-input" placeholder="Search sessions...">
+            <button class="search-mode-btn rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="search-mode-btn" title="Toggle deep search">
               <span id="search-mode-label">Quick</span>
             </button>
           </div>
         </div>
 
         <!-- Settings Button -->
-        <button class="settings-btn" id="settings-btn" title="Settings">
+        <button class="settings-btn rounded-full border border-border bg-card/70 p-2 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="settings-btn" title="Settings">
           <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
             <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
           </svg>
@@ -115,48 +115,48 @@
     </header>
 
     <!-- Main Content -->
-    <main class="main">
+    <main class="main mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <!-- List View -->
       <div class="list-view" id="list-view">
-        <div class="list-controls">
-          <div class="controls-row">
-            <button class="filters-toggle" id="filters-toggle" title="Toggle filters">
+        <div class="list-controls space-y-4">
+          <div class="controls-row flex flex-wrap items-center justify-between gap-3">
+            <button class="filters-toggle inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="filters-toggle" title="Toggle filters">
               <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path fill-rule="evenodd" d="M3 5.75A.75.75 0 013.75 5h12.5a.75.75 0 01.53 1.28L12 10.56V15a.75.75 0 01-1.07.67l-2-1A.75.75 0 018 14V10.56L3.22 6.28A.75.75 0 013 5.75z" clip-rule="evenodd"/>
               </svg>
               <span class="filters-toggle-label" id="filters-toggle-label">Filters</span>
             </button>
 
-            <div class="group-toggle" id="group-toggle">
-              <button class="group-btn active" data-group="date">Date</button>
-              <button class="group-btn" data-group="project">Project</button>
-              <button class="group-btn" data-group="directory">Directory</button>
+            <div class="group-toggle inline-flex items-center gap-1 rounded-full border border-border bg-card/70 p-1" id="group-toggle">
+              <button class="group-btn active rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="date">Date</button>
+              <button class="group-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="project">Project</button>
+              <button class="group-btn rounded-full px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="directory">Directory</button>
             </div>
           </div>
 
-          <div class="active-filters" id="active-filters"></div>
+          <div class="active-filters flex flex-wrap gap-2" id="active-filters"></div>
 
-          <div class="filters-drawer" id="filters-drawer">
-            <div class="filters-section">
-              <div class="filters-title">Tags</div>
-              <div class="tag-list" id="tag-list"></div>
+          <div class="filters-drawer grid gap-6 rounded-2xl border border-border bg-card/60 p-4 md:grid-cols-3" id="filters-drawer">
+            <div class="filters-section space-y-3">
+              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tags</div>
+              <div class="tag-list flex flex-wrap gap-2" id="tag-list"></div>
             </div>
-            <div class="filters-section">
-              <div class="filters-title">Directories</div>
-              <div class="directory-list" id="directory-list"></div>
+            <div class="filters-section space-y-3">
+              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Directories</div>
+              <div class="directory-list flex flex-wrap gap-2" id="directory-list"></div>
             </div>
-            <div class="filters-section">
-              <div class="filters-title">Projects</div>
+            <div class="filters-section space-y-3">
+              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Projects</div>
               <div class="project-search">
-                <input type="text" class="input input-compact" id="project-search-input" placeholder="Search projects...">
+                <input type="text" class="input input-compact w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" id="project-search-input" placeholder="Search projects...">
               </div>
-              <div class="project-list" id="project-list"></div>
-              <button class="btn-small" id="project-browse-btn">Browse all</button>
+              <div class="project-list flex flex-wrap gap-2" id="project-list"></div>
+              <button class="btn-small inline-flex items-center justify-center rounded-md border border-border bg-background/70 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="project-browse-btn">Browse all</button>
             </div>
           </div>
         </div>
 
-        <div class="session-list" id="session-list">
+        <div class="session-list mt-4 space-y-4" id="session-list">
           <div class="loading">
             <div class="loading-spinner"></div>
             Loading sessions...
@@ -165,23 +165,23 @@
       </div>
 
       <!-- Detail View -->
-      <div class="detail-view" id="detail-view">
-        <div class="detail-header">
-          <button class="back-button" id="back-button">
+      <div class="detail-view space-y-4" id="detail-view">
+        <div class="detail-header border-b border-border/70 pb-4">
+          <button class="back-button inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="back-button">
             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
               <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
             </svg>
             Back to sessions
           </button>
-          <div class="detail-title-row">
-            <h1 class="detail-title" id="detail-title"></h1>
-            <button class="pin-button" id="pin-button" title="Pin session">
+          <div class="detail-title-row mt-4 flex items-start justify-between gap-4">
+            <h1 class="detail-title text-2xl font-semibold text-foreground sm:text-3xl" id="detail-title"></h1>
+            <button class="pin-button inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="pin-button" title="Pin session">
               <svg class="pin-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
                 <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
               </svg>
             </button>
           </div>
-          <div class="detail-meta" id="detail-meta"></div>
+          <div class="detail-meta mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground" id="detail-meta"></div>
         </div>
 
         <div id="detail-banner"></div>
@@ -194,28 +194,28 @@
   </div>
 
   <!-- Settings Modal -->
-  <div class="modal" id="settings-modal">
-    <div class="modal-backdrop" id="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Settings</h2>
-        <button class="modal-close" id="modal-close">&times;</button>
+  <div class="modal fixed inset-0 z-50 hidden items-center justify-center" id="settings-modal">
+    <div class="modal-backdrop absolute inset-0 bg-black/40 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="modal-content relative mx-auto w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div class="modal-header flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-foreground">Settings</h2>
+        <button class="modal-close rounded-full border border-border bg-background/80 px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="modal-close">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="settings-section">
-          <h3>Directories</h3>
+      <div class="modal-body mt-5 space-y-6">
+        <div class="settings-section space-y-4">
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Directories</h3>
           <div id="settings-directories">
             <!-- Directory list populated by JS -->
           </div>
-          <button class="btn btn-secondary" id="add-directory-btn">
+          <button class="btn btn-secondary inline-flex items-center justify-center rounded-md border border-border bg-background/80 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60" id="add-directory-btn">
             + Add Directory
           </button>
         </div>
-        <div class="settings-section">
-          <h3>General</h3>
-          <div class="setting-row">
-            <label>Config file</label>
-            <code id="config-path"></code>
+        <div class="settings-section space-y-3">
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">General</h3>
+          <div class="setting-row flex flex-col gap-2 text-sm">
+            <label class="text-muted-foreground">Config file</label>
+            <code class="rounded-md border border-border bg-background/80 px-3 py-2 font-mono text-xs text-foreground" id="config-path"></code>
           </div>
         </div>
       </div>
@@ -223,19 +223,19 @@
   </div>
 
   <!-- Projects Modal -->
-  <div class="modal" id="projects-modal">
-    <div class="modal-backdrop" id="projects-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Projects</h2>
-        <button class="modal-close" id="projects-close">&times;</button>
+  <div class="modal fixed inset-0 z-50 hidden items-center justify-center" id="projects-modal">
+    <div class="modal-backdrop absolute inset-0 bg-black/40 backdrop-blur-sm" id="projects-backdrop"></div>
+    <div class="modal-content relative mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div class="modal-header flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-foreground">Projects</h2>
+        <button class="modal-close rounded-full border border-border bg-background/80 px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="projects-close">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Search</label>
-          <input type="text" class="input" id="projects-search-input" placeholder="Type to filter projects...">
+      <div class="modal-body mt-5 space-y-5">
+        <div class="form-group space-y-2">
+          <label class="text-sm font-medium text-muted-foreground">Search</label>
+          <input type="text" class="input w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" id="projects-search-input" placeholder="Type to filter projects...">
         </div>
-        <div class="projects-modal-list" id="projects-modal-list"></div>
+        <div class="projects-modal-list space-y-2" id="projects-modal-list"></div>
       </div>
     </div>
   </div>
