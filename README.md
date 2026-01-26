@@ -144,6 +144,9 @@ bun run typecheck
 bun test
 bunx playwright test
 
+# coverage
+bun test --coverage --coverage-reporter=lcov tests/unit tests/api
+
 # lint/format (Biome)
 bun run check
 bun run format
