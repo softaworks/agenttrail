@@ -139,6 +139,56 @@ pre {
   border-color: rgb(var(--primary) / 0.4);
 }
 
+.filter-btn,
+.group-btn,
+.filters-toggle,
+.settings-btn,
+.search-mode-btn,
+.modal-close,
+.btn,
+.btn-small,
+.btn-icon,
+.project-item,
+.projects-modal-item,
+.directory-item,
+.tag,
+.meta-link,
+.pin-button,
+.back-button,
+.tool-header,
+.notification-close {
+  cursor: pointer;
+}
+
+.filter-btn:focus-visible,
+.group-btn:focus-visible,
+.filters-toggle:focus-visible,
+.settings-btn:focus-visible,
+.search-mode-btn:focus-visible,
+.modal-close:focus-visible,
+.btn:focus-visible,
+.btn-small:focus-visible,
+.btn-icon:focus-visible,
+.project-item:focus-visible,
+.projects-modal-item:focus-visible,
+.directory-item:focus-visible,
+.tag:focus-visible,
+.meta-link:focus-visible,
+.pin-button:focus-visible,
+.back-button:focus-visible,
+.tool-header:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.5);
+  outline-offset: 2px;
+}
+
+.session-card {
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.session-card:hover {
+  transform: translateY(-1px);
+}
+
 .tag.active,
 .directory-item.active,
 .project-item.active {
@@ -301,4 +351,10 @@ pre {
 .notification-fade {
   opacity: 0;
   transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-card {
+    transition: none;
+  }
 }
