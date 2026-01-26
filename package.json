@@ -1,5 +1,5 @@
 {
-  "name": "agenttrail",
+  "name": "@softaworks/agent-trail",
   "version": "1.0.0",
   "description": "Multi-directory Claude Code session viewer with configurable directories and enhanced features",
   "type": "module",
