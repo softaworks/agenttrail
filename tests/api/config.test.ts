@@ -33,4 +33,11 @@ describe('config API', () => {
     );
     expect(res.status).toBe(400);
   });
+
+  it('returns 404 for unknown routes', async () => {
+    const res = await app.handle(new Request('http://localhost/api/does-not-exist'));
+    expect(res.status).toBe(404);
+    const data = await res.json();
+    expect(data.error).toBeDefined();
+  });
 });

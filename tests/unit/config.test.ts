@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   addCustomTags,
   addDirectory,
@@ -8,6 +10,7 @@ import {
   removeCustomTag,
   removeDirectory,
   removePin,
+  saveConfig,
   updateDirectory,
 } from '../../src/config';
 import { cleanupTestEnvironment, createTestEnvironment, type TestEnvironment } from '../helpers/test-env';
@@ -74,5 +77,27 @@ describe('config', () => {
     await removeCustomTag('session-1', 'important');
     tags = await getCustomTags('session-1');
     expect(tags).not.toContain('important');
+  });
+
+  it('falls back to default config on invalid JSON', async () => {
+    const badPath = join(env.rootDir, 'bad-config.json');
+    await writeFile(badPath, '{invalid json', 'utf-8');
+    process.env.AGENTTRAIL_CONFIG = badPath;
+    const config = await loadConfig();
+    expect(config.directories.length).toBeGreaterThan(0);
+  });
+
+  it('removeCustomTag is safe on missing tags', async () => {
+    await removeCustomTag('missing-session', 'tag');
+    const tags = await getCustomTags('missing-session');
+    expect(tags).toEqual([]);
+  });
+
+  it('saveConfig writes file and can be reloaded', async () => {
+    const config = await loadConfig();
+    config.server.port = 9999;
+    await saveConfig(config);
+    const reloaded = await loadConfig();
+    expect(reloaded.server.port).toBe(9999);
   });
 });

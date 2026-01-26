@@ -47,6 +47,45 @@ describe('parser', () => {
     expect(messages[0]?.content[0]?.text).toBe('Hello  World');
   });
 
+  it('skips messages that become empty after cleaning', () => {
+    const content = JSON.stringify({
+      type: 'user',
+      message: {
+        content: [
+          {
+            type: 'text',
+            text: '<system-reminder>hidden</system-reminder>',
+          },
+        ],
+      },
+    });
+
+    const messages = parseSessionFile(content);
+    expect(messages).toHaveLength(0);
+  });
+
+  it('handles string content and tool_result blocks', () => {
+    const content = [
+      JSON.stringify({
+        type: 'user',
+        message: { content: 'Plain string content' },
+      }),
+      JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [
+            { type: 'tool_result', tool_use_id: 't1', content: 'ok' },
+          ],
+        },
+      }),
+    ].join('\n');
+
+    const messages = parseSessionFile(content);
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.content[0]?.text).toBe('Plain string content');
+    expect(messages[1]?.content[0]?.type).toBe('tool_result');
+  });
+
   it('extracts first user message and skips slash commands', () => {
     const content = [
       JSON.stringify({

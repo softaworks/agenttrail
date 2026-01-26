@@ -33,6 +33,15 @@ describe('sessions', () => {
     expect(chain.chainIndex).toBeDefined();
   });
 
+  it('skips sidechain sessions', async () => {
+    await createTestSession(env.sessionsDir, 'project-c', 'sidechain-1', [
+      { isSidechain: true, type: 'user', message: { content: [{ type: 'text', text: 'skip' }] } },
+    ]);
+
+    const sessions = await discoverSessions();
+    expect(sessions.find((s) => s.id === 'sidechain-1')).toBeUndefined();
+  });
+
   it('builds project list and directory list', async () => {
     const projects = await getProjectList();
     expect(projects.length).toBeGreaterThan(0);
