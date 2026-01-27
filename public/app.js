@@ -604,13 +604,14 @@ function renderDetailEmpty() {
 
 function renderMessages(messages) {
   const container = document.getElementById('messages');
+  const toolResults = collectToolResults(messages);
 
   const html = messages
     .filter(msg => hasDisplayableContent(msg.content))
     .map(msg => {
       const isUser = msg.type === 'user';
       const label = isUser ? 'You' : 'Claude';
-      const contentHtml = renderMessageContent(msg.content);
+      const contentHtml = renderMessageContent(msg.content, toolResults);
       if (!contentHtml.trim()) return '';
 
       const wrapperClass = [
@@ -649,7 +650,7 @@ function hasDisplayableContent(content) {
   });
 }
 
-function renderMessageContent(content) {
+function renderMessageContent(content, toolResults = new Map()) {
   if (!Array.isArray(content)) {
     return `<div class="message-text text-sm leading-relaxed text-foreground">${escapeHtml(String(content))}</div>`;
   }
@@ -660,7 +661,7 @@ function renderMessageContent(content) {
         if (!block.text || !block.text.trim()) return '';
         return `<div class="message-text text-sm leading-relaxed text-foreground">${formatText(block.text)}</div>`;
       case 'tool_use':
-        return renderToolUse(block);
+        return renderToolUse(block, toolResults);
       case 'thinking':
         if (!block.thinking || !block.thinking.trim()) return '';
         return `
@@ -675,13 +676,14 @@ function renderMessageContent(content) {
   }).join('');
 }
 
-function renderToolUse(block) {
+function renderToolUse(block, toolResults = new Map()) {
   const toolName = block.name || 'Unknown';
   const toolClass = `tool-${toolName.toLowerCase()}`;
   const icon = getToolIcon(toolName);
 
   let path = '';
   let content = '';
+  let hasSpecializedContent = false;
 
   if (block.input) {
     if (block.input.file_path) path = block.input.file_path;
@@ -690,24 +692,149 @@ function renderToolUse(block) {
 
     if (toolName === 'Edit' && block.input.old_string && block.input.new_string) {
       content = renderDiff(block.input.old_string, block.input.new_string);
+      hasSpecializedContent = true;
     } else if (toolName === 'Write' && block.input.content) {
       content = renderCodeBlock(block.input.content);
+      hasSpecializedContent = true;
     } else if (toolName === 'Bash' && block.input.command) {
       content = `<pre class="bash-content rounded-xl border border-border bg-background/80 p-3 text-xs text-foreground"><code>${escapeHtml(formatBashCommand(block.input.command))}</code></pre>`;
+      hasSpecializedContent = true;
     }
   }
 
+  const toolResult = toolResults.get(block.id);
+  if (!hasSpecializedContent) {
+    content = renderToolDetailView(block.input, toolResult);
+  } else if (toolResult && toolResult.content) {
+    const resultContent = renderToolResultContent(toolResult.content);
+    if (resultContent) content += resultContent;
+  }
+
   return `
-    <div class="tool-card ${toolClass} ${content ? '' : 'collapsed'} rounded-2xl border border-border bg-background/60">
+    <div class="tool-card ${toolClass} collapsed rounded-2xl border border-border bg-background/60">
       <div class="tool-header flex items-center gap-3 border-b border-border/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <div class="tool-icon flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card/70 text-[11px]">${icon}</div>
         <span class="tool-name">${toolName}</span>
         <span class="tool-path truncate text-[11px] normal-case text-muted-foreground">${escapeHtml(path)}</span>
-        ${content ? '<span class="tool-toggle ml-auto text-[10px]">&#x25BC;</span>' : ''}
+        <span class="tool-toggle ml-auto text-[10px]">&#x25BC;</span>
       </div>
-      ${content ? `<div class="tool-body px-3 py-2">${content}</div>` : ''}
+      <div class="tool-body px-3 py-2">${content}</div>
     </div>
   `;
+}
+
+function collectToolResults(messages) {
+  const results = new Map();
+  messages.forEach(msg => {
+    if (!Array.isArray(msg.content)) return;
+    msg.content.forEach(block => {
+      if (block.type === 'tool_result' && block.tool_use_id) {
+        results.set(block.tool_use_id, block);
+      }
+    });
+  });
+  return results;
+}
+
+function renderToolDetailView(input, toolResult) {
+  let html = '<div class="tool-detail-view">';
+
+  if (input && Object.keys(input).length > 0) {
+    html += '<div class="tool-section">';
+    html += '<div class="tool-section-header">Input</div>';
+    html += '<div class="tool-section-content">';
+    html += renderToolInputParams(input);
+    html += '</div></div>';
+  }
+
+  if (toolResult && toolResult.content) {
+    const resultHtml = renderToolResultContent(toolResult.content);
+    if (resultHtml) html += resultHtml;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderToolInputParams(input) {
+  let html = '<div class="tool-params">';
+  for (const [key, value] of Object.entries(input)) {
+    const displayValue = formatParamValue(value);
+    html += `
+      <div class="tool-param">
+        <span class="tool-param-key">${escapeHtml(key)}:</span>
+        <span class="tool-param-value">${displayValue}</span>
+      </div>
+    `;
+  }
+  html += '</div>';
+  return html;
+}
+
+function formatParamValue(value) {
+  if (value === null || value === undefined) {
+    return '<span class="tool-param-null">null</span>';
+  }
+  if (typeof value === 'boolean') {
+    return `<span class="tool-param-bool">${value}</span>`;
+  }
+  if (typeof value === 'number') {
+    return `<span class="tool-param-number">${value}</span>`;
+  }
+  if (typeof value === 'string') {
+    if (value.length > 200) {
+      const truncated = value.slice(0, 200) + '...';
+      return `<code class="tool-param-string">${escapeHtml(truncated)}</code>`;
+    }
+    if (value.includes('\n')) {
+      return `<pre class="tool-param-multiline">${escapeHtml(value)}</pre>`;
+    }
+    return `<code class="tool-param-string">${escapeHtml(value)}</code>`;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '<span class="tool-param-array">[]</span>';
+    if (value.length <= 3 && value.every(v => ['string', 'number', 'boolean'].includes(typeof v))) {
+      return `<span class="tool-param-array">[${value.map(v => escapeHtml(String(v))).join(', ')}]</span>`;
+    }
+    return `<pre class="tool-param-json">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+  }
+  if (typeof value === 'object') {
+    return `<pre class="tool-param-json">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+  }
+  return escapeHtml(String(value));
+}
+
+function renderToolResultContent(content) {
+  if (!content) return '';
+  let html = '<div class="tool-section tool-output">';
+  html += '<div class="tool-section-header">Output</div>';
+  html += '<div class="tool-section-content">';
+
+  if (typeof content === 'string') {
+    const trimmed = content.trim();
+    if (!trimmed) {
+      html += '<span class="tool-result-empty">(empty)</span>';
+    } else if (trimmed.length > 1000) {
+      html += `<pre class="tool-result-text">${escapeHtml(trimmed.slice(0, 1000))}...\n\n[${trimmed.length - 1000} more characters]</pre>`;
+    } else {
+      html += `<pre class="tool-result-text">${escapeHtml(trimmed)}</pre>`;
+    }
+  } else if (Array.isArray(content)) {
+    const textParts = content
+      .filter(c => c.type === 'text' && c.text)
+      .map(c => c.text)
+      .join('\n');
+    if (textParts) {
+      html += `<pre class="tool-result-text">${escapeHtml(textParts)}</pre>`;
+    } else {
+      html += `<pre class="tool-result-json">${escapeHtml(JSON.stringify(content, null, 2))}</pre>`;
+    }
+  } else {
+    html += `<pre class="tool-result-json">${escapeHtml(JSON.stringify(content, null, 2))}</pre>`;
+  }
+
+  html += '</div></div>';
+  return html;
 }
 
 function formatBashCommand(command) {

@@ -108,6 +108,116 @@ pre {
   display: none;
 }
 
+/* Tool Detail View - Input/Output display */
+.tool-detail-view {
+  padding: 0;
+}
+
+.tool-section {
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.tool-section:last-child {
+  border-bottom: none;
+}
+
+.tool-section-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgb(var(--muted-foreground));
+  padding: 8px 12px;
+  background: rgb(var(--muted));
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.tool-section-content {
+  padding: 12px;
+}
+
+.tool-output .tool-section-header {
+  color: rgb(var(--success));
+}
+
+.tool-params {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-param {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tool-param-key {
+  color: rgb(var(--primary));
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.tool-param-value {
+  color: rgb(var(--muted-foreground));
+  word-break: break-word;
+}
+
+.tool-param-value code,
+.tool-param-string {
+  background: rgb(var(--muted));
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tool-param-null {
+  color: rgb(var(--muted-foreground));
+  font-style: italic;
+}
+
+.tool-param-bool {
+  color: rgb(var(--destructive));
+}
+
+.tool-param-number {
+  color: rgb(var(--accent));
+}
+
+.tool-param-multiline,
+.tool-param-json,
+.tool-result-text,
+.tool-result-json {
+  display: block;
+  background: rgb(var(--muted));
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 4px 0 0 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.tool-param-array {
+  color: rgb(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tool-result-empty {
+  color: rgb(var(--muted-foreground));
+  font-style: italic;
+  font-size: 12px;
+}
+
 .tool-card.collapsed .tool-toggle {
   transform: rotate(-90deg);
 }
