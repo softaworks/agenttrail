@@ -25,6 +25,29 @@ const state = {
   eventSource: null
 };
 
+function updateLayoutVisibility() {
+  const listView = document.getElementById('list-view');
+  const detailView = document.getElementById('detail-view');
+  const sidebar = document.getElementById('sidebar');
+  const contentGrid = document.querySelector('.content-grid');
+
+  if (sidebar) sidebar.classList.remove('hidden');
+  if (detailView) detailView.classList.remove('hidden');
+
+  if (contentGrid) {
+    contentGrid.classList.toggle('expanded', Boolean(state.currentSession));
+  }
+
+  if (state.currentSession) {
+    if (listView) listView.classList.add('hidden');
+    if (detailView) detailView.classList.add('detail-full');
+  } else {
+    if (listView) listView.classList.remove('hidden');
+    if (detailView) detailView.classList.remove('detail-full');
+    renderDetailEmpty();
+  }
+}
+
 // Initialize
 async function init() {
   await Promise.all([
@@ -37,6 +60,7 @@ async function init() {
   initUiState();
   setupEventListeners();
   handleRoute();
+  updateLayoutVisibility();
 }
 
 // API calls
@@ -278,13 +302,14 @@ function renderGroupedSessions(sessions) {
 function renderSessionCard(session) {
   const pinnedClass = session.isPinned ? 'pinned' : '';
   const awaitingClass = session.status === 'awaiting' ? 'awaiting' : '';
+  const selectedClass = state.currentSession && state.currentSession.id === session.id ? 'selected' : '';
   const pinBadge = session.isPinned ? '<span class="pin-badge">&#x1F4CC;</span>' : '';
 
   // Generate preview from first message content
   const preview = getSessionPreview(session);
 
   return `
-    <div class="session-card ${pinnedClass} ${awaitingClass} cursor-pointer rounded-2xl border border-border bg-card/60 p-4 transition hover:border-primary/40 hover:bg-card/80" data-id="${session.id}" onclick="showSession('${session.id}')">
+    <div class="session-card ${pinnedClass} ${awaitingClass} ${selectedClass} cursor-pointer rounded-2xl border border-border bg-card/60 p-3 transition hover:border-primary/40 hover:bg-card/80" data-id="${session.id}" onclick="showSession('${session.id}')">
       <div class="session-card-header flex items-start justify-between gap-4">
         <div class="session-title text-[15px] font-semibold text-foreground">${escapeHtml(session.title)}${pinBadge}</div>
         <div class="session-project meta-link inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-filter-type="project" data-filter-value="${escapeHtml(session.project)}">
@@ -293,7 +318,7 @@ function renderSessionCard(session) {
         </div>
       </div>
       ${preview ? `<div class="session-preview mt-2 text-[13px] text-muted-foreground">${escapeHtml(preview)}</div>` : ''}
-      <div class="session-meta mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+      <div class="session-meta mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span class="session-directory meta-link inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] font-medium" data-filter-type="directory" data-filter-value="${escapeHtml(session.directory)}" style="background: ${session.directoryColor}20; color: ${session.directoryColor}">
           <span class="directory-color h-2 w-2 rounded-full" style="background: ${session.directoryColor}"></span>
           ${escapeHtml(session.directoryLabel)}
@@ -303,7 +328,7 @@ function renderSessionCard(session) {
         ${renderStatusIndicator(session.status)}
       </div>
       ${session.tags.length > 0 ? `
-        <div class="session-tags mt-3 flex flex-wrap gap-2">
+        <div class="session-tags mt-2 flex flex-wrap gap-2">
           ${session.tags.map(tag => `<span class="tag tag-${tag} inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-filter-type="tag" data-filter-value="${escapeHtml(tag)}">${tag}</span>`).join('')}
         </div>
       ` : ''}
@@ -379,11 +404,13 @@ function renderProjectList() {
     : state.projects.slice().sort((a, b) => b.count - a.count).slice(0, 12);
 
   container.innerHTML = list.map(project => `
-    <div class="project-item ${state.filters.project === project.path ? 'active' : ''} inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+    <div class="project-item ${state.filters.project === project.path ? 'active' : ''} flex w-full items-center justify-between gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
          onclick="filterByProject('${escapeHtml(project.path)}')">
-      <span class="project-icon">&#x1F4C1;</span>
-      <span class="project-name">${escapeHtml(project.name)}</span>
-      <span class="filter-count rounded-full border border-border bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground">${project.count}</span>
+      <span class="inline-flex items-center gap-2 truncate">
+        <span class="project-icon">&#x1F4C1;</span>
+        <span class="project-name truncate">${escapeHtml(project.name)}</span>
+      </span>
+      <span class="filter-count shrink-0 rounded-full border border-border bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground">${project.count}</span>
     </div>
   `).join('');
 }
@@ -515,8 +542,7 @@ async function navigateToSession(sessionId) {
   const messagesContainer = document.getElementById('messages');
   messagesContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
 
-  document.getElementById('list-view').classList.add('hidden');
-  document.getElementById('detail-view').classList.add('active');
+  updateLayoutVisibility();
 
   try {
     const res = await fetch(`/api/sessions/${sessionId}`);
@@ -527,7 +553,9 @@ async function navigateToSession(sessionId) {
     const data = await res.json();
     state.currentSession = data.session;
     renderSessionDetail(data.session);
+    renderSessionList();
     startEventStream(sessionId);
+    updateLayoutVisibility();
   } catch (error) {
     console.error('Failed to load session:', error);
     showSessionNotFound(sessionId);
@@ -557,6 +585,28 @@ function renderSessionDetail(session) {
   renderMessages(session.messages);
 }
 
+function renderDetailEmpty() {
+  const title = document.getElementById('detail-title');
+  const meta = document.getElementById('detail-meta');
+  const banner = document.getElementById('detail-banner');
+  const messages = document.getElementById('messages');
+  const pinBtn = document.getElementById('pin-button');
+
+  if (title) title.textContent = 'Select a session';
+  if (meta) meta.innerHTML = '';
+  if (banner) banner.innerHTML = '';
+  if (pinBtn) pinBtn.classList.remove('pinned');
+  if (messages) {
+    messages.innerHTML = `
+      <div class="empty-state flex flex-col items-center justify-center rounded-2xl border border-border bg-card/60 px-6 py-12 text-center">
+        <div class="empty-state-icon text-3xl">&#x1F4D6;</div>
+        <div class="empty-state-title mt-4 text-lg font-semibold text-foreground">Select a session</div>
+        <div class="empty-state-text text-sm text-muted-foreground">Pick a session from the list to view details.</div>
+      </div>
+    `;
+  }
+}
+
 function renderMessages(messages) {
   const container = document.getElementById('messages');
 
@@ -573,7 +623,7 @@ function renderMessages(messages) {
         `message-${msg.type}`,
         'rounded-2xl',
         'border',
-        'p-4',
+        'p-3',
         'space-y-3',
         isUser ? 'border-accent/40 bg-accent/10' : 'border-border bg-card/60'
       ].join(' ');
@@ -654,13 +704,13 @@ function renderToolUse(block) {
 
   return `
     <div class="tool-card ${toolClass} ${content ? '' : 'collapsed'} rounded-2xl border border-border bg-background/60">
-      <div class="tool-header flex items-center gap-3 border-b border-border/70 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <div class="tool-header flex items-center gap-3 border-b border-border/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <div class="tool-icon flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card/70 text-[11px]">${icon}</div>
         <span class="tool-name">${toolName}</span>
         <span class="tool-path truncate text-[11px] normal-case text-muted-foreground">${escapeHtml(path)}</span>
         ${content ? '<span class="tool-toggle ml-auto text-[10px]">&#x25BC;</span>' : ''}
       </div>
-      ${content ? `<div class="tool-body px-4 py-3">${content}</div>` : ''}
+      ${content ? `<div class="tool-body px-3 py-2">${content}</div>` : ''}
     </div>
   `;
 }
@@ -785,7 +835,7 @@ function appendMessage(message) {
     `message-${message.type}`,
     'rounded-2xl',
     'border',
-    'p-4',
+    'p-3',
     'space-y-3',
     isUser ? 'border-accent/40 bg-accent/10' : 'border-border bg-card/60'
   ].join(' ');
@@ -809,8 +859,8 @@ function returnToList() {
     state.eventSource = null;
   }
   state.currentSession = null;
-  document.getElementById('list-view').classList.remove('hidden');
-  document.getElementById('detail-view').classList.remove('active');
+  renderDetailEmpty();
+  updateLayoutVisibility();
 }
 
 async function showList() {
@@ -823,6 +873,9 @@ function handleRoute() {
   if (path.startsWith('/session/')) {
     const sessionId = path.slice('/session/'.length);
     if (sessionId) navigateToSession(sessionId);
+  } else {
+    renderDetailEmpty();
+    updateLayoutVisibility();
   }
 }
 
@@ -836,6 +889,7 @@ function showSessionNotFound(sessionId) {
   `;
   document.getElementById('detail-title').textContent = 'Session not found';
   document.getElementById('detail-meta').innerHTML = '';
+  updateLayoutVisibility();
 }
 
 // Pin functionality
@@ -1402,7 +1456,7 @@ function initUiState() {
   if (savedFiltersOpen === 'true' || savedFiltersOpen === 'false') {
     state.ui.filtersOpen = savedFiltersOpen === 'true';
   } else {
-    state.ui.filtersOpen = window.innerWidth >= 1024;
+    state.ui.filtersOpen = true;
   }
   updateGroupToggle();
   updateFiltersDrawer();

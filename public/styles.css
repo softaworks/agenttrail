@@ -5,51 +5,51 @@
 
 :root {
   /* Semantic tokens (Tailwind-compatible) */
-  --background: 26 31 22;
-  --foreground: 232 240 228;
-  --card: 41 50 35;
-  --card-foreground: 232 240 228;
-  --muted: 35 42 30;
-  --muted-foreground: 182 196 174;
-  --border: 74 88 65;
-  --input: 74 88 65;
-  --primary: 212 168 85;
-  --primary-foreground: 26 31 22;
-  --accent: 90 138 74;
-  --accent-foreground: 232 240 228;
-  --destructive: 196 90 74;
-  --destructive-foreground: 232 240 228;
-  --ring: 212 168 85;
+  --background: 17 19 23;
+  --foreground: 229 231 235;
+  --card: 27 31 38;
+  --card-foreground: 229 231 235;
+  --muted: 33 38 46;
+  --muted-foreground: 156 163 175;
+  --border: 55 65 81;
+  --input: 55 65 81;
+  --primary: 129 140 248;
+  --primary-foreground: 15 23 42;
+  --accent: 56 189 248;
+  --accent-foreground: 15 23 42;
+  --destructive: 248 113 113;
+  --destructive-foreground: 15 23 42;
+  --ring: 129 140 248;
 
-  /* Forest Trail palette (legacy + effects) */
+  /* Neutral Night palette (legacy + effects) */
   --bg-primary: rgb(var(--background));
-  --bg-secondary: 38 46 33;
-  --bg-tertiary: 48 58 41;
+  --bg-secondary: 23 26 32;
+  --bg-tertiary: 30 34 42;
   --bg-card: rgb(var(--card));
-  --border-subtle: 60 72 52;
+  --border-subtle: 45 52 64;
   --text-primary: rgb(var(--foreground));
-  --text-secondary: 182 196 174;
-  --text-muted: 121 136 111;
-  --accent-soft: rgba(212, 168, 85, 0.15);
-  --accent-hover: 224 185 102;
-  --forest-primary: 90 138 74;
-  --forest-soft: rgba(90, 138, 74, 0.15);
-  --forest-muted: 74 122 58;
-  --user-accent: 107 155 90;
-  --user-soft: rgba(107, 155, 90, 0.12);
-  --success: 90 154 74;
-  --success-soft: rgba(90, 154, 74, 0.15);
-  --error: 196 90 74;
-  --error-soft: rgba(196, 90, 74, 0.12);
-  --warning: 212 168 85;
-  --warning-soft: rgba(212, 168, 85, 0.15);
-  --code-bg: 30 36 25;
-  --code-border: 74 88 65;
-  --line-number: 121 136 111;
-  --diff-add-bg: rgba(90, 154, 74, 0.12);
-  --diff-add-border: 90 154 74;
-  --diff-remove-bg: rgba(196, 90, 74, 0.1);
-  --diff-remove-border: 196 90 74;
+  --text-secondary: 156 163 175;
+  --text-muted: 107 114 128;
+  --accent-soft: rgba(129, 140, 248, 0.18);
+  --accent-hover: 165 180 252;
+  --forest-primary: 56 189 248;
+  --forest-soft: rgba(56, 189, 248, 0.14);
+  --forest-muted: 14 116 144;
+  --user-accent: 94 234 212;
+  --user-soft: rgba(94, 234, 212, 0.12);
+  --success: 34 197 94;
+  --success-soft: rgba(34, 197, 94, 0.14);
+  --error: 248 113 113;
+  --error-soft: rgba(248, 113, 113, 0.12);
+  --warning: 251 191 36;
+  --warning-soft: rgba(251, 191, 36, 0.15);
+  --code-bg: 22 26 32;
+  --code-border: 55 65 81;
+  --line-number: 107 114 128;
+  --diff-add-bg: rgba(34, 197, 94, 0.14);
+  --diff-add-border: 34 197 94;
+  --diff-remove-bg: rgba(248, 113, 113, 0.12);
+  --diff-remove-border: 248 113 113;
 
   /* Border Radius */
   --radius-sm: 6px;
@@ -88,14 +88,6 @@ pre {
 }
 
 /* State-based visibility */
-.detail-view {
-  display: none;
-}
-
-.detail-view.active {
-  display: block;
-}
-
 .filters-drawer {
   display: none;
 }
@@ -206,6 +198,12 @@ pre {
 .session-card.pinned {
   border-color: rgb(var(--primary) / 0.5);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.session-card.selected {
+  border-color: rgb(var(--primary) / 0.6);
+  background: rgb(var(--card) / 0.85);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
 }
 
 .session-card.awaiting {
@@ -396,6 +394,42 @@ pre {
 .notification-fade {
   opacity: 0;
   transform: translateY(8px);
+}
+
+/* Expanded detail pane */
+@media (min-width: 1024px) {
+  .content-grid.expanded {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+}
+
+.detail-full {
+  grid-column: 2 / -1;
+}
+
+/* Scrollbars */
+.scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--border)) transparent;
+}
+
+.scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--border));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--primary) / 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {

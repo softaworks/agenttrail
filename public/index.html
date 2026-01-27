@@ -53,10 +53,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
 </head>
 <body>
-  <div class="app min-h-screen bg-background text-foreground">
+  <div class="app flex min-h-screen flex-col bg-background text-foreground">
     <!-- Header -->
     <header class="header sticky top-0 z-50 w-full border-b border-border/80 bg-background/85 backdrop-blur">
-      <div class="header-content mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <div class="header-content mx-auto flex h-16 w-full items-center gap-4 px-4 sm:px-6 lg:px-8">
         <!-- Logo -->
         <div class="logo flex items-center gap-3 font-display text-lg font-semibold text-foreground sm:text-xl">
           <svg class="logo-svg h-8 w-8" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -115,80 +115,89 @@
     </header>
 
     <!-- Main Content -->
-    <main class="main mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <!-- List View -->
-      <div class="list-view" id="list-view">
-        <div class="list-controls space-y-4">
-          <div class="controls-row flex flex-wrap items-center justify-between gap-3">
-            <button class="filters-toggle inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="filters-toggle" title="Toggle filters">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fill-rule="evenodd" d="M3 5.75A.75.75 0 013.75 5h12.5a.75.75 0 01.53 1.28L12 10.56V15a.75.75 0 01-1.07.67l-2-1A.75.75 0 018 14V10.56L3.22 6.28A.75.75 0 013 5.75z" clip-rule="evenodd"/>
-              </svg>
-              <span class="filters-toggle-label" id="filters-toggle-label">Filters</span>
-            </button>
-
-            <div class="group-toggle inline-flex items-center gap-1 rounded-full border border-border bg-card/70 p-1" id="group-toggle">
-              <button class="group-btn active rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="date">Date</button>
-              <button class="group-btn rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="project">Project</button>
-              <button class="group-btn rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="directory">Directory</button>
+    <main class="main mx-auto flex w-full flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
+      <div class="content-grid grid w-full gap-4 md:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)]">
+        <!-- Sidebar -->
+        <aside class="sidebar space-y-4" id="sidebar">
+          <div class="rounded-2xl border border-border bg-card/60 p-3 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Filters</h2>
+              <button class="filters-toggle inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="filters-toggle" title="Toggle filters">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                  <path fill-rule="evenodd" d="M3 5.75A.75.75 0 013.75 5h12.5a.75.75 0 01.53 1.28L12 10.56V15a.75.75 0 01-1.07.67l-2-1A.75.75 0 018 14V10.56L3.22 6.28A.75.75 0 013 5.75z" clip-rule="evenodd"/>
+                </svg>
+                <span class="filters-toggle-label" id="filters-toggle-label">Filters</span>
+              </button>
             </div>
-          </div>
 
-          <div class="active-filters flex flex-wrap gap-2" id="active-filters"></div>
-
-          <div class="filters-drawer grid gap-6 rounded-2xl border border-border bg-card/60 p-4 md:grid-cols-3" id="filters-drawer">
-            <div class="filters-section space-y-3">
-              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tags</div>
-              <div class="tag-list flex flex-wrap gap-2" id="tag-list"></div>
-            </div>
-            <div class="filters-section space-y-3">
-              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Directories</div>
-              <div class="directory-list flex flex-wrap gap-2" id="directory-list"></div>
-            </div>
-            <div class="filters-section space-y-3">
-              <div class="filters-title text-sm font-semibold uppercase tracking-wide text-muted-foreground">Projects</div>
-              <div class="project-search">
-                <input type="text" class="input input-compact w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" id="project-search-input" placeholder="Search projects...">
+            <div class="filters-drawer grid gap-4" id="filters-drawer">
+              <div class="filters-section space-y-3">
+                <div class="filters-title text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tags</div>
+                <div class="tag-list flex flex-wrap gap-2" id="tag-list"></div>
               </div>
-              <div class="project-list flex flex-wrap gap-2" id="project-list"></div>
-              <button class="btn-small inline-flex items-center justify-center rounded-md border border-border bg-background/70 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="project-browse-btn">Browse all</button>
+              <div class="filters-section space-y-3">
+                <div class="filters-title text-xs font-semibold uppercase tracking-wide text-muted-foreground">Directories</div>
+                <div class="directory-list flex flex-wrap gap-2" id="directory-list"></div>
+              </div>
+              <div class="filters-section space-y-3">
+                <div class="filters-title text-xs font-semibold uppercase tracking-wide text-muted-foreground">Projects</div>
+                <div class="project-search">
+                  <input type="text" class="input input-compact w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" id="project-search-input" placeholder="Search projects...">
+                </div>
+              <div class="project-list scrollable flex max-h-[420px] flex-col gap-2 overflow-auto pr-1" id="project-list"></div>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
 
-        <div class="session-list mt-4 space-y-4" id="session-list">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            Loading sessions...
+        <!-- List View -->
+        <section class="list-view" id="list-view">
+          <div class="list-controls space-y-3">
+            <div class="controls-row flex flex-wrap items-center justify-between gap-3">
+              <div class="group-toggle inline-flex items-center gap-1 rounded-full border border-border bg-card/70 p-1" id="group-toggle">
+                <button class="group-btn active rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="date">Date</button>
+                <button class="group-btn rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="project">Project</button>
+                <button class="group-btn rounded-full px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" data-group="directory">Directory</button>
+              </div>
+            </div>
+
+            <div class="active-filters flex flex-wrap gap-2" id="active-filters"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- Detail View -->
-      <div class="detail-view space-y-4" id="detail-view">
-        <div class="detail-header border-b border-border/70 pb-4">
-          <button class="back-button inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="back-button">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-              <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
-            </svg>
-            Back to sessions
-          </button>
-          <div class="detail-title-row mt-4 flex items-start justify-between gap-4">
-            <h1 class="detail-title font-display text-2xl font-semibold text-foreground sm:text-3xl" id="detail-title"></h1>
-            <button class="pin-button inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="pin-button" title="Pin session">
-              <svg class="pin-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
+          <div class="session-list scrollable mt-4 space-y-3" id="session-list">
+            <div class="loading">
+              <div class="loading-spinner"></div>
+              Loading sessions...
+            </div>
+          </div>
+        </section>
+
+        <!-- Detail View -->
+        <section class="detail-view flex flex-col space-y-3" id="detail-view">
+          <div class="detail-header border-b border-border/70 pb-3">
+            <button class="back-button inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="back-button">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
               </svg>
+              Back to list
             </button>
+            <div class="detail-title-row mt-3 flex items-start justify-between gap-4">
+              <h1 class="detail-title font-display text-2xl font-semibold text-foreground sm:text-3xl" id="detail-title"></h1>
+              <button class="pin-button inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" id="pin-button" title="Pin session">
+                <svg class="pin-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="detail-meta mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground" id="detail-meta"></div>
           </div>
-          <div class="detail-meta mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground" id="detail-meta"></div>
-        </div>
 
-        <div id="detail-banner"></div>
+          <div id="detail-banner"></div>
 
-        <div class="messages space-y-4" id="messages">
-          <!-- Messages populated by JS -->
-        </div>
+          <div class="messages scrollable space-y-3" id="messages">
+            <!-- Messages populated by JS -->
+          </div>
+        </section>
       </div>
     </main>
   </div>
