@@ -336,6 +336,44 @@ pre {
   background: rgb(var(--accent));
 }
 
+.live-dot {
+  position: relative;
+}
+
+@keyframes livePulseRing {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.live-indicator.awaiting .live-dot::after,
+.live-indicator.working .live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  opacity: 0;
+  animation: livePulseRing 1.35s ease-out infinite;
+  pointer-events: none;
+}
+
+.live-indicator.awaiting .live-dot::after {
+  border-color: rgb(var(--primary) / 0.55);
+}
+
+.live-indicator.working .live-dot::after {
+  border-color: rgb(var(--accent) / 0.55);
+}
+
 .pin-button.pinned {
   color: rgb(var(--primary));
   border-color: rgb(var(--primary) / 0.4);
@@ -504,6 +542,48 @@ pre {
 .notification-fade {
   opacity: 0;
   transform: translateY(8px);
+}
+
+/* View transitions */
+@keyframes detailEnter {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes listEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.detail-view.entering {
+  animation: detailEnter 180ms ease-out;
+}
+
+.list-view.entering {
+  animation: listEnter 140ms ease-out;
+}
+
+.pin-button .pin-icon {
+  transition: transform 0.18s ease;
+}
+
+.pin-button.pinned .pin-icon {
+  transform: rotate(-18deg) translateY(-1px);
+}
+
+.pin-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .detail-full {

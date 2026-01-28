@@ -1,5 +1,9 @@
 // AgentTrail - Client-side JavaScript
 
+const sessionCache = new Map(); // sessionId -> session
+const sessionInflight = new Map(); // sessionId -> Promise<session|null>
+const PREFETCH_MAX_INFLIGHT = 4;
+
 const state = {
   sessions: [],
   allSessions: [],
@@ -19,11 +23,29 @@ const state = {
   groupBy: 'date',
   ui: {
     filtersOpen: false,
-    projectsModalOpen: false
+    projectsModalOpen: false,
+    pendingSessionId: null,
+    isNavigating: false,
+    sessionFetchAbort: null,
+    lastPrefetch: { id: null, at: 0 }
   },
   searchMode: 'quick',
   eventSource: null
 };
+
+function animateViewEnter(el) {
+  if (!el) return;
+  el.classList.remove('entering');
+  void el.offsetWidth;
+  el.classList.add('entering');
+  el.addEventListener(
+    'animationend',
+    () => {
+      el.classList.remove('entering');
+    },
+    { once: true }
+  );
+}
 
 function updateLayoutVisibility() {
   const listView = document.getElementById('list-view');
@@ -32,7 +54,8 @@ function updateLayoutVisibility() {
 
   if (sidebar) sidebar.classList.remove('hidden');
 
-  if (state.currentSession) {
+  const hasDetail = Boolean(state.currentSession || state.ui.pendingSessionId);
+  if (hasDetail) {
     if (listView) listView.classList.add('hidden');
     if (detailView) {
       detailView.classList.remove('hidden');
@@ -45,6 +68,27 @@ function updateLayoutVisibility() {
       detailView.classList.remove('detail-full');
     }
   }
+}
+
+function prefetchSession(sessionId) {
+  if (!sessionId) return;
+  if (sessionCache.has(sessionId) || sessionInflight.has(sessionId)) return;
+  if (sessionInflight.size >= PREFETCH_MAX_INFLIGHT) return;
+
+  const promise = fetch(`/api/sessions/${sessionId}`)
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.session) return null;
+      sessionCache.set(sessionId, data.session);
+      return data.session;
+    })
+    .catch(() => null)
+    .finally(() => {
+      sessionInflight.delete(sessionId);
+    });
+
+  sessionInflight.set(sessionId, promise);
 }
 
 // Initialize
@@ -574,26 +618,68 @@ async function showSession(sessionId) {
 
 async function navigateToSession(sessionId) {
   if (state.currentSession && state.currentSession.id === sessionId) return;
+  if (state.ui.pendingSessionId === sessionId) return;
 
-  const messagesContainer = document.getElementById('messages');
-  messagesContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+  if (state.eventSource) {
+    state.eventSource.close();
+    state.eventSource = null;
+  }
+
+  if (state.ui.sessionFetchAbort) {
+    try {
+      state.ui.sessionFetchAbort.abort();
+    } catch {
+      // ignore
+    }
+  }
+  state.ui.sessionFetchAbort = new AbortController();
+
+  const detailView = document.getElementById('detail-view');
+
+  // Fast-path: use in-memory cache for instant navigation
+  const cached = sessionCache.get(sessionId);
+  if (cached) {
+    state.ui.pendingSessionId = null;
+    state.ui.isNavigating = false;
+    state.currentSession = cached;
+    updateLayoutVisibility();
+    animateViewEnter(detailView);
+    renderSessionDetail(cached);
+    renderSessionList();
+    startEventStream(sessionId);
+    return;
+  }
+
+  state.ui.pendingSessionId = sessionId;
+  state.ui.isNavigating = true;
+  state.currentSession = null;
+  renderSessionDetailSkeleton(sessionId);
 
   updateLayoutVisibility();
+  animateViewEnter(detailView);
 
   try {
-    const res = await fetch(`/api/sessions/${sessionId}`);
+    const res = await fetch(`/api/sessions/${sessionId}`, { signal: state.ui.sessionFetchAbort.signal });
     if (!res.ok) {
+      state.ui.pendingSessionId = null;
+      state.ui.isNavigating = false;
       showSessionNotFound(sessionId);
       return;
     }
     const data = await res.json();
     state.currentSession = data.session;
+    sessionCache.set(sessionId, data.session);
+    state.ui.pendingSessionId = null;
+    state.ui.isNavigating = false;
     renderSessionDetail(data.session);
     renderSessionList();
     startEventStream(sessionId);
     updateLayoutVisibility();
   } catch (error) {
+    if (error?.name === 'AbortError') return;
     console.error('Failed to load session:', error);
+    state.ui.pendingSessionId = null;
+    state.ui.isNavigating = false;
     showSessionNotFound(sessionId);
   }
 }
@@ -603,6 +689,8 @@ function renderSessionDetail(session) {
 
   const pinBtn = document.getElementById('pin-button');
   pinBtn.classList.toggle('pinned', session.isPinned);
+  pinBtn.disabled = false;
+  updatePinButtonUi(session.isPinned);
 
   const metaHtml = `
     <span style="color: ${session.directoryColor}">${escapeHtml(session.directoryLabel)}</span>
@@ -614,11 +702,111 @@ function renderSessionDetail(session) {
     <span>${session.messages.length} messages</span>
   `;
   document.getElementById('detail-meta').innerHTML = metaHtml;
+  updateDetailLiveIndicator(session.status);
 
   // Render tags section in the banner area
   document.getElementById('detail-banner').innerHTML = renderTagsSection(session);
 
   renderMessages(session.messages);
+}
+
+function updateDetailLiveIndicator(status) {
+  const meta = document.getElementById('detail-meta');
+  if (!meta) return;
+
+  const existing = document.getElementById('detail-live-wrapper');
+
+  if (status !== 'awaiting' && status !== 'working') {
+    if (existing) existing.remove();
+    return;
+  }
+
+  const labels = { awaiting: 'Needs input', working: 'Working...' };
+  const label = labels[status] || status;
+
+  const html = `
+    <span class="session-dot inline-block h-1 w-1 rounded-full bg-muted-foreground/60"></span>
+    <span id="detail-live-indicator" class="live-indicator ${status} inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[11px] font-medium">
+      <span class="live-dot h-1.5 w-1.5 rounded-full"></span>
+      Live: ${label}
+    </span>
+  `;
+
+  if (existing) {
+    existing.innerHTML = html;
+    return;
+  }
+
+  const wrapper = document.createElement('span');
+  wrapper.id = 'detail-live-wrapper';
+  wrapper.className = 'inline-flex items-center gap-3';
+  wrapper.innerHTML = html;
+  meta.appendChild(wrapper);
+}
+
+function renderSessionDetailSkeleton(sessionId) {
+  const title = document.getElementById('detail-title');
+  const meta = document.getElementById('detail-meta');
+  const banner = document.getElementById('detail-banner');
+  const messages = document.getElementById('messages');
+  const pinBtn = document.getElementById('pin-button');
+
+  if (title) {
+    title.innerHTML = `
+      <div class="animate-pulse">
+        <div class="h-7 w-2/3 rounded-lg bg-muted"></div>
+      </div>
+    `;
+  }
+
+  if (meta) {
+    meta.innerHTML = `
+      <div class="animate-pulse flex flex-wrap gap-2">
+        <div class="h-4 w-24 rounded-full bg-muted"></div>
+        <div class="h-4 w-16 rounded-full bg-muted"></div>
+        <div class="h-4 w-28 rounded-full bg-muted"></div>
+      </div>
+    `;
+  }
+
+  if (pinBtn) {
+    pinBtn.classList.remove('pinned');
+    pinBtn.disabled = true;
+    updatePinButtonUi(false);
+  }
+
+  if (banner) {
+    banner.innerHTML = `
+      <div class="animate-pulse rounded-2xl border border-border bg-card/60 p-4">
+        <div class="h-3 w-16 rounded bg-muted"></div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <div class="h-7 w-20 rounded-full bg-muted"></div>
+          <div class="h-7 w-24 rounded-full bg-muted"></div>
+          <div class="h-7 w-16 rounded-full bg-muted"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (messages) {
+    messages.innerHTML = `
+      <div data-testid="session-loading" class="space-y-3">
+        ${Array.from({ length: 4 })
+          .map(
+            (_, i) => `
+              <div class="animate-pulse rounded-2xl border border-border bg-card/60 p-3">
+                <div class="h-3 w-20 rounded bg-muted"></div>
+                <div class="mt-3 space-y-2">
+                  <div class="h-3 ${i % 2 === 0 ? 'w-11/12' : 'w-10/12'} rounded bg-muted"></div>
+                  <div class="h-3 w-8/12 rounded bg-muted"></div>
+                </div>
+              </div>
+            `
+          )
+          .join('')}
+      </div>
+    `;
+  }
 }
 
 function renderDetailEmpty() {
@@ -631,7 +819,11 @@ function renderDetailEmpty() {
   if (title) title.textContent = 'Select a session';
   if (meta) meta.innerHTML = '';
   if (banner) banner.innerHTML = '';
-  if (pinBtn) pinBtn.classList.remove('pinned');
+  if (pinBtn) {
+    pinBtn.classList.remove('pinned');
+    pinBtn.disabled = true;
+    updatePinButtonUi(false);
+  }
   if (messages) {
     messages.innerHTML = `
       <div class="empty-state flex flex-col items-center justify-center rounded-2xl border border-border bg-card/60 px-6 py-12 text-center">
@@ -979,6 +1171,8 @@ function startEventStream(sessionId) {
     const { status } = JSON.parse(event.data);
     if (state.currentSession) {
       state.currentSession.status = status;
+      sessionCache.set(state.currentSession.id, state.currentSession);
+      updateDetailLiveIndicator(status);
     }
   });
 }
@@ -1021,9 +1215,20 @@ function returnToList() {
     state.eventSource.close();
     state.eventSource = null;
   }
+  if (state.ui.sessionFetchAbort) {
+    try {
+      state.ui.sessionFetchAbort.abort();
+    } catch {
+      // ignore
+    }
+  }
+  state.ui.pendingSessionId = null;
+  state.ui.isNavigating = false;
   state.currentSession = null;
   renderDetailEmpty();
   updateLayoutVisibility();
+  const listView = document.getElementById('list-view');
+  animateViewEnter(listView);
 }
 
 async function showList() {
@@ -1052,6 +1257,12 @@ function showSessionNotFound(sessionId) {
   `;
   document.getElementById('detail-title').textContent = 'Session not found';
   document.getElementById('detail-meta').innerHTML = '';
+  const pinBtn = document.getElementById('pin-button');
+  if (pinBtn) {
+    pinBtn.classList.remove('pinned');
+    pinBtn.disabled = true;
+    updatePinButtonUi(false);
+  }
   updateLayoutVisibility();
 }
 
@@ -1061,18 +1272,38 @@ async function togglePin() {
 
   const isPinned = state.currentSession.isPinned;
   const sessionId = state.currentSession.id;
+  const pinButton = document.getElementById('pin-button');
 
   try {
+    if (pinButton) pinButton.disabled = true;
     if (isPinned) {
       await fetch(`/api/pins/${sessionId}`, { method: 'DELETE' });
     } else {
       await fetch(`/api/pins/${sessionId}`, { method: 'POST' });
     }
     state.currentSession.isPinned = !isPinned;
-    document.getElementById('pin-button').classList.toggle('pinned', !isPinned);
+    if (pinButton) {
+      pinButton.classList.toggle('pinned', !isPinned);
+      updatePinButtonUi(!isPinned);
+    }
+    showNotification(!isPinned ? 'Session pinned' : 'Session unpinned', 'success');
   } catch (error) {
     console.error('Failed to toggle pin:', error);
+    showNotification('Failed to toggle pin', 'error');
+  } finally {
+    if (pinButton) pinButton.disabled = false;
   }
+}
+
+function updatePinButtonUi(isPinned) {
+  const pinBtn = document.getElementById('pin-button');
+  if (!pinBtn) return;
+  const labelEl = document.getElementById('pin-button-label');
+
+  const title = isPinned ? 'Unpin session' : 'Pin session';
+  pinBtn.title = title;
+  pinBtn.setAttribute('aria-label', title);
+  if (labelEl) labelEl.textContent = isPinned ? 'Unpin' : 'Pin';
 }
 
 // Search
@@ -1408,16 +1639,17 @@ async function submitAddTag(sessionId) {
     if (!res.ok) throw new Error('Failed to add tag');
 
     hideAddTagForm(sessionId);
-    await loadSessions();
-    await loadTags();
-    if (state.currentSession && state.currentSession.id === sessionId) {
-      const sessionRes = await fetch(`/api/sessions/${sessionId}`);
-      const data = await sessionRes.json();
-      state.currentSession = data.session;
-      renderSessionDetail(data.session);
-    }
-    showNotification('Tag added', 'success');
-  } catch (error) {
+	    await loadSessions();
+	    await loadTags();
+	    if (state.currentSession && state.currentSession.id === sessionId) {
+	      const sessionRes = await fetch(`/api/sessions/${sessionId}`);
+	      const data = await sessionRes.json();
+	      state.currentSession = data.session;
+	      sessionCache.set(sessionId, data.session);
+	      renderSessionDetail(data.session);
+	    }
+	    showNotification('Tag added', 'success');
+	  } catch (error) {
     showNotification('Failed to add tag: ' + error.message, 'error');
   }
 }
@@ -1430,16 +1662,17 @@ async function removeTag(sessionId, tag) {
 
     if (!res.ok) throw new Error('Failed to remove tag');
 
-    await loadSessions();
-    await loadTags();
-    if (state.currentSession && state.currentSession.id === sessionId) {
-      const sessionRes = await fetch(`/api/sessions/${sessionId}`);
-      const data = await sessionRes.json();
-      state.currentSession = data.session;
-      renderSessionDetail(data.session);
-    }
-    showNotification('Tag removed', 'success');
-  } catch (error) {
+	    await loadSessions();
+	    await loadTags();
+	    if (state.currentSession && state.currentSession.id === sessionId) {
+	      const sessionRes = await fetch(`/api/sessions/${sessionId}`);
+	      const data = await sessionRes.json();
+	      state.currentSession = data.session;
+	      sessionCache.set(sessionId, data.session);
+	      renderSessionDetail(data.session);
+	    }
+	    showNotification('Tag removed', 'success');
+	  } catch (error) {
     showNotification('Failed to remove tag: ' + error.message, 'error');
   }
 }
@@ -1485,6 +1718,25 @@ function setupEventListeners() {
         header.classList.remove('scrolled');
       }
     });
+  }
+
+  // Prefetch session detail on hover/touch for snappier navigation
+  const sessionListEl = document.getElementById('session-list');
+  if (sessionListEl) {
+    const maybePrefetchFromEvent = (event) => {
+      const card = event.target?.closest?.('.session-card');
+      if (!card) return;
+      const sessionId = card.dataset.id;
+      if (!sessionId) return;
+
+      const now = Date.now();
+      if (state.ui.lastPrefetch.id === sessionId && now - state.ui.lastPrefetch.at < 300) return;
+      state.ui.lastPrefetch = { id: sessionId, at: now };
+      prefetchSession(sessionId);
+    };
+
+    sessionListEl.addEventListener('mouseover', maybePrefetchFromEvent);
+    sessionListEl.addEventListener('touchstart', maybePrefetchFromEvent, { passive: true });
   }
 
   // Sidebar time filters (legacy/fallback)
@@ -1625,6 +1877,7 @@ function initUiState() {
   updateFiltersDrawer();
   renderActiveFilters();
   updateFiltersToggleLabel();
+  updatePinButtonUi(false);
 }
 
 function setGroupBy(groupBy) {
