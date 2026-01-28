@@ -83,11 +83,11 @@ async function main() {
   ╭─────────────────────────────────────────╮
   │                                         │
   │   AgentTrail                            │
-  │   Multi-directory session viewer        │
+  │   Multi-profile session viewer          │
   │                                         │
   │   ${urlLine}  │
   │                                         │
-  │   Directories: ${config.directories.length.toString().padEnd(24)} │
+  │   Profiles: ${config.directories.length.toString().padEnd(27)} │
   │                                         │
   ╰─────────────────────────────────────────╯
   `);

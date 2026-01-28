@@ -1410,11 +1410,11 @@ function showAddDirectoryForm() {
           <option value="codex">Codex</option>
         </select>
       </div>
-      <input type="text" id="new-dir-path" placeholder="Directory path (e.g., ~/.claude/projects)" class="input w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
+      <input type="text" id="new-dir-path" placeholder="Path (e.g., ~/.claude/projects)" class="input w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
       <input type="text" id="new-dir-label" placeholder="Label (e.g., Work)" class="input w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
       <input type="color" id="new-dir-color" value="#10b981" class="input-color h-9 w-16 rounded-md border border-border bg-background/80">
       <div class="form-actions flex items-center justify-end gap-2">
-        <button class="btn btn-primary inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90" onclick="submitAddDirectory()">Add</button>
+        <button class="btn btn-primary inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90" onclick="submitAddDirectory()">Add profile</button>
         <button class="btn btn-secondary inline-flex items-center justify-center rounded-md border border-border bg-background/80 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" onclick="cancelAddDirectory()">Cancel</button>
       </div>
     </div>
@@ -1431,8 +1431,8 @@ function updateAddDirectoryTypeHint() {
   const type = typeSelect.value;
   pathInput.placeholder =
     type === 'codex'
-      ? 'Directory path (e.g., ~/.codex/sessions)'
-      : 'Directory path (e.g., ~/.claude/projects)';
+      ? 'Path (e.g., ~/.codex/sessions)'
+      : 'Path (e.g., ~/.claude/projects)';
 }
 
 function cancelAddDirectory() {
@@ -1452,7 +1452,7 @@ async function submitAddDirectory() {
   const type = typeSelect?.value === 'codex' ? 'codex' : 'claude';
 
   if (!path) {
-    showNotification('Please enter a directory path', 'error');
+    showNotification('Please enter a path', 'error');
     return;
   }
 
@@ -1465,7 +1465,7 @@ async function submitAddDirectory() {
 
     if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.error || 'Failed to add directory');
+      throw new Error(data.error || 'Failed to add profile');
     }
 
     cancelAddDirectory();
@@ -1473,9 +1473,9 @@ async function submitAddDirectory() {
     await loadSessions();
     renderSettingsDirectories();
     renderDirectoryList();
-    showNotification('Directory added successfully', 'success');
+    showNotification('Profile added successfully', 'success');
   } catch (error) {
-    showNotification('Failed to add directory: ' + error.message, 'error');
+    showNotification('Failed to add profile: ' + error.message, 'error');
   }
 }
 
@@ -1487,13 +1487,13 @@ async function toggleDirectoryEnabled(path, enabled) {
       body: JSON.stringify({ enabled })
     });
 
-    if (!res.ok) throw new Error('Failed to update directory');
+    if (!res.ok) throw new Error('Failed to update profile');
 
     await loadDirectories();
     await loadSessions();
     renderDirectoryList();
     renderSessionList();
-    showNotification(enabled ? 'Directory enabled' : 'Directory disabled', 'success');
+    showNotification(enabled ? 'Profile enabled' : 'Profile disabled', 'success');
   } catch (error) {
     showNotification('Failed to update: ' + error.message, 'error');
   }
@@ -1513,7 +1513,7 @@ function editDirectory(path) {
     <div class="modal-backdrop absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeEditDirectory()"></div>
     <div class="modal-content relative mx-auto w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl">
       <div class="modal-header flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-foreground">Edit Directory</h2>
+	        <h2 class="text-lg font-semibold text-foreground">Edit Profile</h2>
         <button class="modal-close rounded-full border border-border bg-background/80 px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" onclick="closeEditDirectory()">&times;</button>
       </div>
       <div class="modal-body mt-5 space-y-4">
@@ -1568,7 +1568,7 @@ async function submitEditDirectory(originalPath) {
       body: JSON.stringify({ label, color, type })
     });
 
-    if (!res.ok) throw new Error('Failed to update directory');
+    if (!res.ok) throw new Error('Failed to update profile');
 
     closeEditDirectory();
     await loadDirectories();
@@ -1576,7 +1576,7 @@ async function submitEditDirectory(originalPath) {
     renderSettingsDirectories();
     renderDirectoryList();
     renderSessionList();
-    showNotification('Directory updated', 'success');
+    showNotification('Profile updated', 'success');
   } catch (error) {
     showNotification('Failed to update: ' + error.message, 'error');
   }
@@ -1584,7 +1584,7 @@ async function submitEditDirectory(originalPath) {
 
 async function deleteDirectory(path) {
   const dir = state.directories.find(d => d.path === path);
-  if (!confirm(`Delete directory "${dir?.label || path}"? Sessions won't be deleted, just hidden.`)) {
+  if (!confirm(`Delete profile "${dir?.label || path}"? Sessions won't be deleted, just hidden.`)) {
     return;
   }
 
@@ -1593,14 +1593,14 @@ async function deleteDirectory(path) {
       method: 'DELETE'
     });
 
-    if (!res.ok) throw new Error('Failed to delete directory');
+    if (!res.ok) throw new Error('Failed to delete profile');
 
     await loadDirectories();
     await loadSessions();
     renderSettingsDirectories();
     renderDirectoryList();
     renderSessionList();
-    showNotification('Directory removed', 'success');
+    showNotification('Profile removed', 'success');
   } catch (error) {
     showNotification('Failed to delete: ' + error.message, 'error');
   }
@@ -1975,7 +1975,7 @@ function renderActiveFilters() {
     chips.push({ label: `Tag: ${state.filters.tag}`, action: "clearFilter('tag')" });
   }
   if (state.filters.directory) {
-    chips.push({ label: `Directory: ${state.filters.directory}`, action: "clearFilter('directory')" });
+    chips.push({ label: `Profile: ${state.filters.directory}`, action: "clearFilter('directory')" });
   }
   if (state.filters.project) {
     chips.push({ label: `Project: ${getProjectLabel(state.filters.project)}`, action: "clearFilter('project')" });

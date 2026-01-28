@@ -178,14 +178,14 @@ export function isPinnedSync(config: AgentTrailConfig, sessionId: string): boole
   return config.pins.includes(sessionId);
 }
 
-// Directory management
+// Profile management (stored as directories in config for backward compat)
 export async function addDirectory(dir: DirectoryConfig): Promise<void> {
   const config = await loadConfig();
 
   // Check if directory already exists
   const exists = config.directories.some((d) => d.path === dir.path);
   if (exists) {
-    throw new Error(`Directory already configured: ${dir.path}`);
+    throw new Error(`Profile already configured: ${dir.path}`);
   }
 
   config.directories.push({
@@ -203,7 +203,7 @@ export async function updateDirectory(
 
   const index = config.directories.findIndex((d) => d.path === path);
   if (index === -1) {
-    throw new Error(`Directory not found: ${path}`);
+    throw new Error(`Profile not found: ${path}`);
   }
 
   const normalizedUpdates: Partial<DirectoryConfig> = updates.type
